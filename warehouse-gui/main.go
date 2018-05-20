@@ -33,7 +33,7 @@ var (
 // handleMessages handles messages
 func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
 	switch m.Name {
-	case "event.name":
+	case "input":
 		// Unmarshal payload
 		var s []string
 		if err = json.Unmarshal(m.Payload, &s); err != nil {

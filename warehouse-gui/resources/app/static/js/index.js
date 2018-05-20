@@ -41,6 +41,10 @@ let index = {
 };
 
 var sendInput = function() {
+    var sx = document.getElementById('sx').value;
+    var sy = document.getElementById('sy').value;
+    var ex = document.getElementById('ex').value;
+    var ey = document.getElementById('ey').value;
     var optimizer = document.querySelector('input[name="optimizer"]:checked').value;
     var iter = document.getElementById('iterations').value;
     var method = document.querySelector('input[name="input"]:checked').value;
@@ -48,7 +52,7 @@ var sendInput = function() {
     var ordersfile = document.getElementById('ordersfile').value;
     var outputfile = document.getElementById('outputfile').value;
     // This will send a message to GO
-    astilectron.sendMessage({name: "event.name", payload: [optimizer, iter, method, order, ordersfile, outputfile]}, function(message) {
+    astilectron.sendMessage({name: "input", payload: [sx, sy, ex, ey, optimizer, iter, method, order, ordersfile, outputfile]}, function(message) {
         console.log("received " + message.payload)
     });
 }
