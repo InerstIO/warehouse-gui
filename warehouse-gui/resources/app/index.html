@@ -18,7 +18,7 @@
                 y: <input type="number" id="ey"><br>
                 <input type="radio" name="optimizer" value="0" checked> Nearest Neighbor Optimizer<br>
                 <input type="radio" name="optimizer" value="1"> Branch & Bound Optimizer (slow!!)<br>
-                Max number of iterations:<br>
+                Max number of iterations (0 for max available):<br>
                 <input type="number" id="iterations"><br>
                 Input method:<br>
                 <input type="radio" name="input" value="0" checked> Manual input<br>
@@ -32,6 +32,10 @@
                 Please list output file:<br>
                 <input type="text" id="outputfile"><br>
                 <input type="submit" value="Submit"><br>
+        </form><br>
+        <form id="batch">
+                order ID: <input type="number" id="orderid"><br>
+                <button type="button" onclick="showBatchOrder()">Submit</button>
         </form>
         <br>
         <div class="grid-container">
@@ -940,6 +944,15 @@
         <script src="static/lib/chart/chart.min.js"></script>
         <script type="text/javascript">
                 index.init();
+        </script>
+        <script>
+                document.addEventListener("keydown", function (e) {
+                        if (e.which === 123) {
+                                require('remote').getCurrentWindow().toggleDevTools();
+                        } else if (e.which === 116) {
+                                location.reload();
+                        }
+                });
         </script>
 </body>
 </html>

@@ -1,3 +1,5 @@
+var batchresult;
+
 let index = {
     init: function() {
         // Init
@@ -13,6 +15,10 @@ let index = {
                 if (message.name === "route") {
                     return {payload: message.payload + " world"};
                 }
+            });
+            // This will send a message to GO
+            astilectron.sendMessage({name: "batchresult"}, function(message) {
+                batchresult = JSON.parse(message.payload);
             });
         })
 
@@ -55,4 +61,13 @@ var sendInput = function() {
     astilectron.sendMessage({name: "input", payload: [sx, sy, ex, ey, optimizer, iter, method, order, ordersfile, outputfile]}, function(message) {
         console.log("received " + message.payload)
     });
+};
+
+function showBatchOrder() {
+    var orderid = document.getElementById("orderid").value;
+    for (var i in batchresult[orderid]) {
+        var locid = batchresult[orderid][i].Y*39+batchresult[orderid][i].X;
+        var pos = document.getElementsByClassName('item' + locid.toString())[0];
+        pos.style.backgroundColor = "lightblue"
+    }
 }

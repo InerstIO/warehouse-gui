@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"warehouse-optimizer/warehouse"
+	"io/ioutil"
 
 	"github.com/asticode/go-astilectron"
 	"github.com/asticode/go-astilectron-bootstrap"
@@ -20,6 +21,7 @@ import (
 const (
 	gridPath = "warehouse-grid.csv"
 	dimPath = "item-dimensions-tabbed.txt"
+	batchOutput = "../../batchoutput.json"
 )
 
 // Vars
@@ -41,6 +43,16 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 		    return
 		}
 		astilog.Infof("get message from js %s", s)
+	case "batchresult":
+		var file *os.File
+		file, err = os.Open(batchOutput) // For read access.
+		if err != nil {
+			payload = err.Error()
+			return
+		}
+		defer file.Close()
+		r, _ := ioutil.ReadAll(file)
+		payload = string(r)
 	}
 	return
 }
@@ -71,6 +83,7 @@ func main() {
 		}},
 		OnWait: func(_ *astilectron.Astilectron, iw *astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
 			w = iw
+			w.OpenDevTools()
 			// This will send a message and execute a callback
 			bootstrap.SendMessage(w, "route", "hello", func(m *bootstrap.MessageIn) {
 				// Unmarshal payload
