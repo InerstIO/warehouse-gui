@@ -3,9 +3,6 @@ package main
 import (
 	"flag"
 	"encoding/json"
-	"encoding/csv"
-	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -19,8 +16,8 @@ import (
 )
 
 const (
-	gridPath = "warehouse-grid.csv"
-	dimPath = "item-dimensions-tabbed.txt"
+	gridPath = "../../warehouse-grid.csv"
+	dimPath = "../../item-dimensions-tabbed.txt"
 	batchOutput = "../../batchoutput.json"
 )
 
@@ -30,6 +27,9 @@ var (
 	BuiltAt string
 	debug   = flag.Bool("d", false, "enables the debug mode")
 	w       *astilectron.Window
+	dim	map[int][]float64 = warehouse.ParesDimensionInfo(dimPath)
+	m map[int]warehouse.Product = warehouse.ParseProductInfo(gridPath, dim)
+	pathInfo map[warehouse.Point]map[warehouse.Point]float64 = warehouse.BuildPathInfo(gridPath)
 )
 
 // handleMessages handles messages
@@ -39,10 +39,11 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 		// Unmarshal payload
 		var s []string
 		if err = json.Unmarshal(m.Payload, &s); err != nil {
-		    payload = err.Error()
+			payload = err.Error()
 		    return
+		} else {
+			payload = findPath(s)
 		}
-		astilog.Infof("get message from js %s", s)
 	case "batchresult":
 		var file *os.File
 		file, err = os.Open(batchOutput) // For read access.
@@ -55,6 +56,33 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 		payload = string(r)
 	}
 	return
+}
+
+func findPath(s []string) string {
+	x,_:=strconv.Atoi(s[0])
+	y,_:=strconv.Atoi(s[1])
+	start := warehouse.Point{X: x, Y: y}
+	x,_=strconv.Atoi(s[2])
+	y,_=strconv.Atoi(s[3])
+	end := warehouse.Point{X: x, Y: y}
+	o := strings.Split(s[5], " ")
+	order := make([]int, len(o))
+	for i := range o {
+		o[i] = strings.TrimSpace(o[i])
+		order[i], _ = strconv.Atoi(o[i])
+		_, ok := m[order[i]]
+		if !ok {
+			astilog.Fatalf("Item id %v not exist.", order[i])
+		}
+	}
+	var optimalOrder warehouse.Order
+	s4,_:=strconv.Atoi(s[4])
+	if s4 == 0 {
+		optimalOrder = warehouse.NNIOrderOptimizer(order, start, end, m, pathInfo)
+	} else {
+		optimalOrder = warehouse.BnBOrderOptimizer(order, start, end, m, pathInfo)
+	}
+	return string(warehouse.Routes2JSON([]warehouse.Order{optimalOrder}, start, end, m))
 }
 
 func main() {
@@ -104,148 +132,5 @@ func main() {
 		},
 	}); err == nil {
 		astilog.Fatal(errors.Wrap(err, "running bootstrap failed"))
-	}
-	
-	dim := warehouse.ParesDimensionInfo(dimPath)
-	m := warehouse.ParseProductInfo(gridPath, dim)
-	pathInfo := warehouse.BuildPathInfo(gridPath)
-	fmt.Println("Hello User, where is your worker? e.g.:\"2 4\"")
-	x, y := warehouse.ReadInput()
-	start := warehouse.Point{X: x, Y: y}
-	if x*y%2 == 1 {
-		log.Fatal("Cannot start on a shelf.")
-	}
-	fmt.Println("What is your worker's end location? e.g.:\"0 18\"")
-	x, y = warehouse.ReadInput()
-	end := warehouse.Point{X: x, Y: y}
-	if x*y%2 == 1 {
-		log.Fatal("Cannot end on a shelf.")
-	}
-	var op, t, iter int
-	fmt.Println("Type 0 for Nearest Neighbor Optimizer, type 1 for Branch & Bound Optimizer (slow!!)")
-	var strInput string
-	_, err := fmt.Scan(&strInput)
-	if err != nil {
-		log.Fatal(err)
-	}
-	strInput = strings.TrimSpace(strInput)
-	op, err = strconv.Atoi(strInput)
-	optimizer := func(op int, o warehouse.Order, start, end warehouse.Point, m map[int]warehouse.Product,
-		pathInfo map[warehouse.Point]map[warehouse.Point]float64, iteration ...int) warehouse.Order {
-		if op == 0 {
-			return warehouse.NNIOrderOptimizer(o, start, end, m, pathInfo, iteration...)
-		} else {
-			return warehouse.BnBOrderOptimizer(o, start, end, m, pathInfo)
-		}
-	}
-	if op == 0 {
-		fmt.Println("What's the max number of iterations you want? (0 for max available)")
-		_, err := fmt.Scan(&strInput)
-		if err != nil {
-			log.Fatal(err)
-		}
-		strInput = strings.TrimSpace(strInput)
-		iter, err = strconv.Atoi(strInput)
-	}
-
-	for {
-		fmt.Println("Type 1 to manual input, type 2 to file input.")
-		_, err := fmt.Scan(&strInput)
-		if err != nil {
-			log.Fatal(err)
-		}
-		strInput = strings.TrimSpace(strInput)
-		t, err = strconv.Atoi(strInput)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if t == 1 || t == 2 {
-			break
-		}
-	}
-	if t == 1 {
-		fmt.Println("Hello User, what items would you like to pick? (separate by space)")
-		orders := warehouse.ReadOrder(m)
-		fmt.Println("Here is the optimal picking order:")
-		//optimalOrder := warehouse.BruteForceOrderOptimizer(orders[0], start, end, m, pathInfo)
-		optimalOrder := optimizer(op, orders[0], start, end, m, pathInfo, iter)
-		fmt.Println(optimalOrder)
-		fmt.Println("Here is the optimal path:")
-		s := warehouse.Route2String(optimalOrder, start, end, m)
-		fmt.Println(s)
-		fmt.Printf("Total distance traveled: %v\n", warehouse.RouteLength(optimalOrder, start, end, m, pathInfo))
-	} else if t == 2 {
-		fmt.Println("Please list file of orders to be processed:")
-		ordersPath := warehouse.ReadString()
-		orders := warehouse.ParesOrderInfo(ordersPath)
-		fmt.Println("Please list output file:")
-		outputPath := warehouse.ReadString()
-		fmt.Println("Computing...")
-		outputFile, err := os.Create(outputPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer outputFile.Close()
-
-		writer := csv.NewWriter(outputFile)
-		defer writer.Flush()
-
-		orderCtr := 0
-		for i, order := range orders {
-			if err := writer.Write([]string{"##Order Number##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{strconv.Itoa(i + 1)}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"##Worker Start Location##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{fmt.Sprint(start)}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"## Worker End Location##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{fmt.Sprint(end)}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"##Original Parts Order##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write(warehouse.Order2csv(order)); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"##Optimized Parts Order##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			optimalOrder := optimizer(op, order, start, end, m, pathInfo, iter)
-			if err := writer.Write(warehouse.Order2csv(optimalOrder)); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"##Original Parts Total Distance##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{strconv.FormatFloat(warehouse.RouteLength(order, start, end, m, pathInfo), 'G', -1, 64)}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"##Optimized Parts Total Distance##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{strconv.FormatFloat(warehouse.RouteLength(optimalOrder, start, end, m, pathInfo), 'G', -1, 64)}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"##Path of optimized order##"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{warehouse.Route2String(optimalOrder, start, end, m)}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			if err := writer.Write([]string{"------------------------------------------------"}); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-			orderCtr++
-		}
-		fmt.Printf("%v orders processed.", orderCtr)
 	}
 }

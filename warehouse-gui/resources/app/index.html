@@ -9,7 +9,7 @@
 
 </head>
 <body>
-        <form id="input" onsubmit="return sendInput()">
+        <form id="input">
                 Start:<br>
                 x: <input type="number" id="sx"><br>
                 y: <input type="number" id="sy"><br>
@@ -18,20 +18,9 @@
                 y: <input type="number" id="ey"><br>
                 <input type="radio" name="optimizer" value="0" checked> Nearest Neighbor Optimizer<br>
                 <input type="radio" name="optimizer" value="1"> Branch & Bound Optimizer (slow!!)<br>
-                Max number of iterations (0 for max available):<br>
-                <input type="number" id="iterations"><br>
-                Input method:<br>
-                <input type="radio" name="input" value="0" checked> Manual input<br>
-                <input type="radio" name="input" value="1"> File input<br><br>
-                Manual input:<br>
                 Hello User, what items would you like to pick? (separate by space)<br>
                 <input type="text" id="order"><br><br>
-                File input:<br>
-                Please list file of orders to be processed:<br>
-                <input type="text" id="ordersfile"><br>
-                Please list output file:<br>
-                <input type="text" id="outputfile"><br>
-                <input type="submit" value="Submit"><br>
+                <button type="button" onclick="sendInput()">Submit</button>
         </form><br>
         <form id="batch">
                 order ID: <input type="number" id="orderid"><br>

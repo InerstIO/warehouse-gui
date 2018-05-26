@@ -9,24 +9,9 @@ let index = {
 
         // This will wait for the astilectron namespace to be ready
         document.addEventListener('astilectron-ready', function() {
-            // This will listen to messages sent by GO
-            astilectron.onMessage(function(message) {
-                // Process message
-                if (message.name === "route") {
-                    return {payload: message.payload + " world"};
-                }
-            });
             // This will send a message to GO
             astilectron.sendMessage({name: "batchresult"}, function(message) {
                 batchresult = JSON.parse(message.payload);
-            });
-        })
-
-        // This will wait for the astilectron namespace to be ready
-        document.addEventListener('astilectron-ready', function() {
-            // This will send a message to GO
-            astilectron.sendMessage({name: "event.name", payload: "hello"}, function(message) {
-                console.log("received " + message.payload)
             });
         })
     },
@@ -47,44 +32,24 @@ let index = {
 };
 
 var sendInput = function() {
+    clearMap();
     var sx = document.getElementById('sx').value;
     var sy = document.getElementById('sy').value;
     var ex = document.getElementById('ex').value;
     var ey = document.getElementById('ey').value;
     var optimizer = document.querySelector('input[name="optimizer"]:checked').value;
-    var iter = document.getElementById('iterations').value;
-    var method = document.querySelector('input[name="input"]:checked').value;
     var order = document.getElementById('order').value;
-    var ordersfile = document.getElementById('ordersfile').value;
-    var outputfile = document.getElementById('outputfile').value;
     // This will send a message to GO
-    astilectron.sendMessage({name: "input", payload: [sx, sy, ex, ey, optimizer, iter, method, order, ordersfile, outputfile]}, function(message) {
-        console.log("received " + message.payload)
+    astilectron.sendMessage({name: "input", payload: [sx, sy, ex, ey, optimizer, order]}, function(message) {
+        result = JSON.parse(message.payload);
+        showOrder(0, result);
     });
 };
 
 function showBatchOrder() {
-    clearMap()
+    clearMap();
     var orderid = document.getElementById("orderid").value;
-    for (var i in batchresult[orderid].slice(1)) {
-        var cur = batchresult[orderid][i];
-        var next = batchresult[orderid][parseInt(i)+1];
-        if (next.X == cur.X) {
-            var range = Array.from(new Array(Math.abs(cur.Y-next.Y)+1), (x,i) => i + Math.min(cur.Y,next.Y))
-            for (var j of range) {
-                var locid = j*39+cur.X;
-                var pos = document.getElementsByClassName('item' + locid.toString())[0];
-                pos.style.backgroundColor = "lightblue";
-            }
-        } else if (next.Y == cur.Y) {
-            var range = Array.from(new Array(Math.abs(cur.X-next.X)+1), (x,i) => i + Math.min(cur.X,next.X))
-            for (var j of range) {
-                var locid = cur.Y*39+j;
-                var pos = document.getElementsByClassName('item' + locid.toString())[0];
-                pos.style.backgroundColor = "lightblue";
-            }
-        }
-    }
+    showOrder(orderid, batchresult);
 }
 
 function clearMap() {
@@ -98,6 +63,28 @@ function clearMap() {
                 var locid = j*39+i;
                 var pos = document.getElementsByClassName('item' + locid.toString())[0];
                 pos.style.backgroundColor = "rgba(255, 255, 255, 1)";
+            }
+        }
+    }
+}
+
+function showOrder(orderid, result) {
+    for (var i in result[orderid].slice(1)) {
+        var cur = result[orderid][i];
+        var next = result[orderid][parseInt(i)+1];
+        if (next.X == cur.X) {
+            var range = Array.from(new Array(Math.abs(cur.Y-next.Y)+1), (x,i) => i + Math.min(cur.Y,next.Y));
+            for (var j of range) {
+                var locid = j*39+cur.X;
+                var pos = document.getElementsByClassName('item' + locid.toString())[0];
+                pos.style.backgroundColor = "lightblue";
+            }
+        } else if (next.Y == cur.Y) {
+            var range = Array.from(new Array(Math.abs(cur.X-next.X)+1), (x,i) => i + Math.min(cur.X,next.X));
+            for (var j of range) {
+                var locid = cur.Y*39+j;
+                var pos = document.getElementsByClassName('item' + locid.toString())[0];
+                pos.style.backgroundColor = "lightblue";
             }
         }
     }
