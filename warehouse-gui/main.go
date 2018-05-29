@@ -66,22 +66,18 @@ func findPath(s []string) string {
 	y,_=strconv.Atoi(s[3])
 	end := warehouse.Point{X: x, Y: y}
 	o := strings.Split(s[5], " ")
-	order := make([]int, len(o))
+	order := make(warehouse.Order, len(o))
 	for i := range o {
 		o[i] = strings.TrimSpace(o[i])
-		order[i], _ = strconv.Atoi(o[i])
-		_, ok := m[order[i]]
+		order[i].ProdID, _ = strconv.Atoi(o[i])
+		_, ok := m[order[i].ProdID]
 		if !ok {
 			astilog.Fatalf("Item id %v not exist.", order[i])
 		}
 	}
 	var optimalOrder warehouse.Order
-	s4,_:=strconv.Atoi(s[4])
-	if s4 == 0 {
-		optimalOrder = warehouse.NNIOrderOptimizer(order, start, end, m, pathInfo)
-	} else {
-		optimalOrder = warehouse.BnBOrderOptimizer(order, start, end, m, pathInfo)
-	}
+	//weight,_:=strconv.Atoi(s[4])
+	optimalOrder = warehouse.BnBOrderOptimizer(order, start, end, m, pathInfo, 10.0)
 	return string(warehouse.Routes2JSON([]warehouse.Order{optimalOrder}, start, end, m))
 }
 
@@ -126,8 +122,8 @@ func main() {
 		WindowOptions: &astilectron.WindowOptions{
 			BackgroundColor: astilectron.PtrStr("#333"),
 			Center:          astilectron.PtrBool(true),
-			Height:          astilectron.PtrInt(930),
-			Width:           astilectron.PtrInt(810),
+			Height:          astilectron.PtrInt(1000),
+			Width:           astilectron.PtrInt(1600),
 			WebPreferences:	&astilectron.WebPreferences{DevTools: astilectron.PtrBool(true)},
 		},
 	}); err == nil {

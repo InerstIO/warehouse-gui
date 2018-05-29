@@ -37,19 +37,21 @@ var sendInput = function() {
     var sy = document.getElementById('sy').value;
     var ex = document.getElementById('ex').value;
     var ey = document.getElementById('ey').value;
-    var optimizer = document.querySelector('input[name="optimizer"]:checked').value;
+    var weight = document.getElementById('weight').value;
     var order = document.getElementById('order').value;
     // This will send a message to GO
-    astilectron.sendMessage({name: "input", payload: [sx, sy, ex, ey, optimizer, order]}, function(message) {
+    astilectron.sendMessage({name: "input", payload: [sx, sy, ex, ey, weight, order]}, function(message) {
         result = JSON.parse(message.payload);
-        showOrder(0, result);
+        showRoute(0, result.Paths);
+        showItem(0, result.Products);
     });
 };
 
 function showBatchOrder() {
     clearMap();
-    var orderid = document.getElementById("orderid").value;
-    showOrder(orderid, batchresult);
+    var orderid = document.getElementById("orderid").value - 1;
+    showRoute(orderid, batchresult.Paths);
+    showItem(orderid, batchresult.Products);
 }
 
 function clearMap() {
@@ -59,6 +61,7 @@ function clearMap() {
                 var locid = j*39+i;
                 var pos = document.getElementsByClassName('item' + locid.toString())[0];
                 pos.style.backgroundColor = "rgba(251, 219, 121, 1)";
+                pos.innerHTML = ""
             } else {
                 var locid = j*39+i;
                 var pos = document.getElementsByClassName('item' + locid.toString())[0];
@@ -68,7 +71,7 @@ function clearMap() {
     }
 }
 
-function showOrder(orderid, result) {
+function showRoute(orderid, result) {
     for (var i in result[orderid].slice(1)) {
         var cur = result[orderid][i];
         var next = result[orderid][parseInt(i)+1];
@@ -87,5 +90,14 @@ function showOrder(orderid, result) {
                 pos.style.backgroundColor = "lightblue";
             }
         }
+    }
+}
+
+function showItem(orderid, items) {
+    for (var i of items[orderid]) {
+        var locid = i.Pos.Y*39 + i.Pos.X;
+        var pos = document.getElementsByClassName('item' + locid.toString())[0];
+        pos.style.backgroundColor = "Fuchsia";
+        pos.innerHTML = i.OrderID;
     }
 }
