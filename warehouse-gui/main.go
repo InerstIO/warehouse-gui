@@ -19,6 +19,7 @@ const (
 	gridPath = "../../warehouse-grid.csv"
 	dimPath = "../../item-dimensions-tabbed.txt"
 	batchOutput = "../../batchoutput.json"
+	timeLimit = 10.0
 )
 
 // Vars
@@ -75,10 +76,15 @@ func findPath(s []string) string {
 			astilog.Fatalf("Item id %v not exist.", order[i])
 		}
 	}
-	var optimalOrder warehouse.Order
-	//weight,_:=strconv.Atoi(s[4])
-	optimalOrder = warehouse.BnBOrderOptimizer(order, start, end, m, pathInfo, 10.0)
-	return string(warehouse.Routes2JSON([]warehouse.Order{optimalOrder}, start, end, m))
+	var optimalOrders []warehouse.Order
+	orders := []warehouse.Order{order}
+	if weight, err:=strconv.ParseFloat(s[4], 64); err == nil {
+		orders = warehouse.SplitOrder(order, m, weight)
+	}
+	for _, so := range orders {
+		optimalOrders = append(optimalOrders, warehouse.BnBOrderOptimizer(so, start, end, m, pathInfo, timeLimit))
+	}
+	return string(warehouse.Routes2JSON(optimalOrders, start, end, m))
 }
 
 func main() {
