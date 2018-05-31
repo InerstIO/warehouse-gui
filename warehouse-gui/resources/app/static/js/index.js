@@ -73,6 +73,10 @@ function showRouteString(i, orders, start, end) {
         routeString = JSON.parse(message.payload);
         document.getElementById('instruction').innerHTML = routeString;
     });
+    astilectron.sendMessage({name: "effort", payload: {Order:orders[i], Start:start, End:end}}, function(message) {
+        effort = JSON.parse(message.payload);
+        document.getElementById('effort').innerHTML = "Effort: " + effort;
+    });
 }
 
 function showBatchOrder() {

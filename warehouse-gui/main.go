@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"flag"
 	"encoding/json"
 	"os"
@@ -79,6 +80,27 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 				return
 			} else {
 				payload = string(routeB)
+			}
+		}
+	case "effort":
+		// Unmarshal payload
+		var s ose
+		if err = json.Unmarshal(m.Payload, &s); err != nil {
+			payload = err.Error()
+		    return
+		} else {
+			var retstr string
+			if effort, missWeightData := warehouse.RouteEffort(s.Order, s.Start, s.End, pm, pathInfo); missWeightData {
+				retstr = fmt.Sprintf("There are some item(s) with no weight data, and the effort of this path is at least %v.\n", effort)
+			} else {
+				retstr = fmt.Sprintf("The effort is %v.\n", effort)
+			}
+			var effortB []byte
+			if effortB, err = json.Marshal(retstr); err != nil {
+				payload = err.Error()
+				return
+			} else {
+				payload = string(effortB)
 			}
 		}
 	}
