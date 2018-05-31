@@ -29,9 +29,16 @@ var (
 	debug   = flag.Bool("d", false, "enables the debug mode")
 	w       *astilectron.Window
 	dim	map[int][]float64 = warehouse.ParesDimensionInfo(dimPath)
-	m map[int]warehouse.Product = warehouse.ParseProductInfo(gridPath, dim)
+	pm map[int]warehouse.Product = warehouse.ParseProductInfo(gridPath, dim)
 	pathInfo map[warehouse.Point]map[warehouse.Point]float64 = warehouse.BuildPathInfo(gridPath)
+	start, end warehouse.Point
+	ro warehouse.RouteOrder
 )
+
+type ose struct {
+	Order warehouse.Order
+	Start, End warehouse.Point
+}
 
 // handleMessages handles messages
 func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
@@ -54,7 +61,26 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 		}
 		defer file.Close()
 		r, _ := ioutil.ReadAll(file)
+		if err = json.Unmarshal(r, &ro); err != nil {
+			payload = err.Error()
+		    return
+		}
 		payload = string(r)
+	case "route":
+		// Unmarshal payload
+		var s ose
+		if err = json.Unmarshal(m.Payload, &s); err != nil {
+			payload = err.Error()
+		    return
+		} else {
+			var routeB []byte
+			if routeB, err = json.Marshal(warehouse.Route2String(s.Order, s.Start, s.End, pm)); err != nil {
+				payload = err.Error()
+				return
+			} else {
+				payload = string(routeB)
+			}
+		}
 	}
 	return
 }
@@ -62,16 +88,16 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 func findPath(s []string) string {
 	x,_:=strconv.Atoi(s[0])
 	y,_:=strconv.Atoi(s[1])
-	start := warehouse.Point{X: x, Y: y}
+	start = warehouse.Point{X: x, Y: y}
 	x,_=strconv.Atoi(s[2])
 	y,_=strconv.Atoi(s[3])
-	end := warehouse.Point{X: x, Y: y}
+	end = warehouse.Point{X: x, Y: y}
 	o := strings.Split(s[5], " ")
 	order := make(warehouse.Order, len(o))
 	for i := range o {
 		o[i] = strings.TrimSpace(o[i])
 		order[i].ProdID, _ = strconv.Atoi(o[i])
-		_, ok := m[order[i].ProdID]
+		_, ok := pm[order[i].ProdID]
 		if !ok {
 			astilog.Fatalf("Item id %v not exist.", order[i])
 		}
@@ -79,12 +105,12 @@ func findPath(s []string) string {
 	var optimalOrders []warehouse.Order
 	orders := []warehouse.Order{order}
 	if weight, err:=strconv.ParseFloat(s[4], 64); err == nil {
-		orders = warehouse.SplitOrder(order, m, weight)
+		orders = warehouse.SplitOrder(order, pm, weight)
 	}
 	for _, so := range orders {
-		optimalOrders = append(optimalOrders, warehouse.BnBOrderOptimizer(so, start, end, m, pathInfo, timeLimit))
+		optimalOrders = append(optimalOrders, warehouse.BnBOrderOptimizer(so, start, end, pm, pathInfo, timeLimit))
 	}
-	return string(warehouse.Routes2JSON(optimalOrders, start, end, m))
+	return string(warehouse.Routes2JSON(optimalOrders, start, end, pm))
 }
 
 func main() {

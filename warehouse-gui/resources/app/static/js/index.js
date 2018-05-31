@@ -55,14 +55,24 @@ function showRouteItem(result) {
             clearMap();
             showRoute(i, result.Paths);
             showItem(i, result.Products, true);
+            showRouteString(i, result.Orders, result.Start, result.End);
         },
         dec: function() {
             i -= 1;
             clearMap();
             showRoute(i, result.Paths);
             showItem(i, result.Products, true);
+            showRouteString(i, result.Orders, result.Start, result.End);
         }
     }
+}
+
+function showRouteString(i, orders, start, end) {
+    // This will send a message to GO
+    astilectron.sendMessage({name: "route", payload: {Order:orders[i], Start:start, End:end}}, function(message) {
+        routeString = JSON.parse(message.payload);
+        document.getElementById('instruction').innerHTML = routeString;
+    });
 }
 
 function showBatchOrder() {
@@ -70,6 +80,7 @@ function showBatchOrder() {
     var orderid = document.getElementById("orderid").value - 1;
     showRoute(orderid, batchresult.Paths);
     showItem(orderid, batchresult.Products);
+    showRouteString(orderid, batchresult.Orders, batchresult.Start, batchresult.End);
 }
 
 function clearMap() {
