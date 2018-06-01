@@ -34,6 +34,7 @@ var (
 	pathInfo map[warehouse.Point]map[warehouse.Point]float64 = warehouse.BuildPathInfo(gridPath)
 	start, end warehouse.Point
 	ros []warehouse.RouteOrder
+	reverseMap map[int]map[int]bool
 )
 
 type ose struct {
@@ -67,6 +68,40 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 		    return
 		}
 		payload = string(r)
+	case "reOrderMapping":
+		reOrderMapping := make(map[int]int)
+		reverseMap = make(map[int]map[int]bool)
+		for i, ro := range ros {
+			for _, o := range ro.Orders {
+				for _, item := range o {
+					reOrderMapping[item.OrderID] = i
+					fmt.Println(item.OrderID, i)///////////////////////////////
+					elem, ok := reverseMap[i]
+					if ok {
+						elem[item.OrderID] = true
+					} else {
+						elem = make(map[int]bool)
+						elem[item.OrderID] = true
+					}
+				}
+			}
+		}
+		var reOrderMappingB []byte
+		if reOrderMappingB, err = json.Marshal(reOrderMapping); err != nil {
+			payload = err.Error()
+			return
+		} else {
+			payload = string(reOrderMappingB)
+			fmt.Println(reOrderMapping)
+		}
+	case "reverseMap":
+		var reverseMapB []byte
+		if reverseMapB, err = json.Marshal(reverseMap); err != nil {
+			payload = err.Error()
+			return
+		} else {
+			payload = string(reverseMapB)
+		}
 	case "route":
 		// Unmarshal payload
 		var s ose
