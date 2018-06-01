@@ -1,6 +1,4 @@
 var batchresult;
-var reOrderMapping;
-var reverseMap;
 
 let index = {
     init: function() {
@@ -14,12 +12,6 @@ let index = {
             // This will send a message to GO
             astilectron.sendMessage({name: "batchresult"}, function(message) {
                 batchresult = JSON.parse(message.payload);
-            });
-            astilectron.sendMessage({name: "reOrderMapping"}, function(message) {
-                reOrderMapping = JSON.parse(message.payload);
-            });
-            astilectron.sendMessage({name: "reverseMap"}, function(message) {
-                reverseMap = JSON.parse(message.payload);
             });
         })
     },
@@ -90,7 +82,7 @@ function showRouteString(i, orders, start, end) {
 function showBatchOrder() {
     clearMap();
     var orderid = document.getElementById("orderid").value;
-    c1 = showRouteItem(batchresult[reOrderMapping[parseInt(orderid)]], false);
+    c1 = showRouteItem(batchresult.Ros[batchresult.ROM[parseInt(orderid)]], false);
     c1.inc();
 }
 

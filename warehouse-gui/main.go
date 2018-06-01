@@ -42,6 +42,12 @@ type ose struct {
 	Start, End warehouse.Point
 }
 
+type rom struct {
+	Ros []warehouse.RouteOrder
+	ROM	map[int]int
+	RM	map[int]map[int]bool
+}
+
 // handleMessages handles messages
 func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
 	switch m.Name {
@@ -67,15 +73,13 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 			payload = err.Error()
 		    return
 		}
-		payload = string(r)
-	case "reOrderMapping":
+
 		reOrderMapping := make(map[int]int)
 		reverseMap = make(map[int]map[int]bool)
 		for i, ro := range ros {
 			for _, o := range ro.Orders {
 				for _, item := range o {
 					reOrderMapping[item.OrderID] = i
-					fmt.Println(item.OrderID, i)///////////////////////////////
 					elem, ok := reverseMap[i]
 					if ok {
 						elem[item.OrderID] = true
@@ -86,21 +90,15 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 				}
 			}
 		}
-		var reOrderMappingB []byte
-		if reOrderMappingB, err = json.Marshal(reOrderMapping); err != nil {
+
+		batchResult := rom{ros, reOrderMapping, reverseMap}
+
+		var batchResultB []byte
+		if batchResultB, err = json.Marshal(batchResult); err != nil {
 			payload = err.Error()
 			return
 		} else {
-			payload = string(reOrderMappingB)
-			fmt.Println(reOrderMapping)
-		}
-	case "reverseMap":
-		var reverseMapB []byte
-		if reverseMapB, err = json.Marshal(reverseMap); err != nil {
-			payload = err.Error()
-			return
-		} else {
-			payload = string(reverseMapB)
+			payload = string(batchResultB)
 		}
 	case "route":
 		// Unmarshal payload
