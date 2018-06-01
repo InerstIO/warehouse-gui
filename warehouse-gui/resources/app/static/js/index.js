@@ -42,26 +42,26 @@ var sendInput = function() {
     // This will send a message to GO
     astilectron.sendMessage({name: "input", payload: [sx, sy, ex, ey, weight, order]}, function(message) {
         result = JSON.parse(message.payload);
-        c1 = showRouteItem(result);
+        c1 = showRouteItem(result, true);
         c1.inc();
     });
 };
 
-function showRouteItem(result) {
+function showRouteItem(result, manual) {
     var i = -1;
     return {
         inc: function() {
             i += 1;
             clearMap();
             showRoute(i, result.Paths);
-            showItem(i, result.Products, true);
+            showItem(i, result.Products, manual);
             showRouteString(i, result.Orders, result.Start, result.End);
         },
         dec: function() {
             i -= 1;
             clearMap();
             showRoute(i, result.Paths);
-            showItem(i, result.Products, true);
+            showItem(i, result.Products, manual);
             showRouteString(i, result.Orders, result.Start, result.End);
         }
     }
@@ -82,9 +82,8 @@ function showRouteString(i, orders, start, end) {
 function showBatchOrder() {
     clearMap();
     var orderid = document.getElementById("orderid").value - 1;
-    showRoute(orderid, batchresult.Paths);
-    showItem(orderid, batchresult.Products);
-    showRouteString(orderid, batchresult.Orders, batchresult.Start, batchresult.End);
+    c1 = showRouteItem(batchresult[orderid], false);
+    c1.inc();
 }
 
 function clearMap() {

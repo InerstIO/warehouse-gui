@@ -33,7 +33,7 @@ var (
 	pm map[int]warehouse.Product = warehouse.ParseProductInfo(gridPath, dim)
 	pathInfo map[warehouse.Point]map[warehouse.Point]float64 = warehouse.BuildPathInfo(gridPath)
 	start, end warehouse.Point
-	ro warehouse.RouteOrder
+	ros []warehouse.RouteOrder
 )
 
 type ose struct {
@@ -62,7 +62,7 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 		}
 		defer file.Close()
 		r, _ := ioutil.ReadAll(file)
-		if err = json.Unmarshal(r, &ro); err != nil {
+		if err = json.Unmarshal(r, &ros); err != nil {
 			payload = err.Error()
 		    return
 		}
@@ -132,7 +132,9 @@ func findPath(s []string) string {
 	for _, so := range orders {
 		optimalOrders = append(optimalOrders, warehouse.BnBOrderOptimizer(so, start, end, pm, pathInfo, timeLimit))
 	}
-	return string(warehouse.Routes2JSON(optimalOrders, start, end, pm))
+	ro := warehouse.Orders2Routes(optimalOrders, start, end, pm)
+	roB, _:=json.Marshal(ro)
+	return string(roB)
 }
 
 func main() {
