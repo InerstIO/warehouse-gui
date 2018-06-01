@@ -80,12 +80,12 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 			for _, o := range ro.Orders {
 				for _, item := range o {
 					reOrderMapping[item.OrderID] = i
-					elem, ok := reverseMap[i]
+					_, ok := reverseMap[i]
 					if ok {
-						elem[item.OrderID] = true
+						reverseMap[i][item.OrderID] = true
 					} else {
-						elem = make(map[int]bool)
-						elem[item.OrderID] = true
+						reverseMap[i] = make(map[int]bool)
+						reverseMap[i][item.OrderID] = true
 					}
 				}
 			}

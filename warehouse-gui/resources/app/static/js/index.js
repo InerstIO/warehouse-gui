@@ -44,6 +44,9 @@ var sendInput = function() {
         result = JSON.parse(message.payload);
         c1 = showRouteItem(result, true);
         c1.inc();
+        if (result.Paths.length>1) {
+            document.getElementById("splitmerge").innerHTML = "Order splitted!"
+        }
     });
 };
 
@@ -84,6 +87,12 @@ function showBatchOrder() {
     var orderid = document.getElementById("orderid").value;
     c1 = showRouteItem(batchresult.Ros[batchresult.ROM[parseInt(orderid)]], false);
     c1.inc();
+    if (batchresult.Ros[batchresult.ROM[parseInt(orderid)]].Paths.length>1) {
+        document.getElementById("splitmerge").innerHTML = "Order splitted!"
+    }
+    if (Object.keys(batchresult.RM[batchresult.ROM[parseInt(orderid)]]).length > 1) {
+        document.getElementById("splitmerge").innerHTML = "Order merged!"
+    }
 }
 
 function clearMap() {
