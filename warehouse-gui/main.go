@@ -209,7 +209,7 @@ func main() {
 		},
 		MessageHandler: handleMessages, 
 		WindowOptions: &astilectron.WindowOptions{
-			BackgroundColor: astilectron.PtrStr("#333"),
+			BackgroundColor: astilectron.PtrStr("#F9F5C3"),
 			Center:          astilectron.PtrBool(true),
 			Height:          astilectron.PtrInt(1000),
 			Width:           astilectron.PtrInt(1600),

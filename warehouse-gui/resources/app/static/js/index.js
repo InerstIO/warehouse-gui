@@ -33,6 +33,7 @@ let index = {
 
 var sendInput = function() {
     clearMap();
+    clearText();
     var sx = document.getElementById('sx').value;
     var sy = document.getElementById('sy').value;
     var ex = document.getElementById('ex').value;
@@ -84,6 +85,7 @@ function showRouteString(i, orders, start, end) {
 
 function showBatchOrder() {
     clearMap();
+    clearText();
     var orderid = document.getElementById("orderid").value;
     c1 = showRouteItem(batchresult.Ros[batchresult.ROM[parseInt(orderid)]], false);
     c1.inc();
@@ -110,6 +112,12 @@ function clearMap() {
             }
         }
     }
+}
+
+function clearText() {
+    document.getElementById("splitmerge").innerHTML = "";
+    document.getElementById('effort').innerHTML = "";
+    document.getElementById('instruction').innerHTML = "";    
 }
 
 function showRoute(orderid, result) {
